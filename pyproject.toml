@@ -1,0 +1,79 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "system-one-datasets"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Koichi Shiraishi", email = "zchee.io@gmail.com" },
+]
+requires-python = ">=3.14"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+    "ty",
+]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 120
+preview = true
+
+[tool.ruff.lint]
+select = [
+    "E", # pycodestyle (Error)
+    "W", # pycodestyle (Warning)
+    "F", # Pyflakes
+    "I", # isort
+    "UP", # pyupgrade
+    "B", # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "RUF", # Ruff-specific rules
+    "D", # pydocstyle
+    "PIE", # flake8-pie
+    "PERF", # Perflint
+    "PT", # flake8-pytest-style
+    "T20", # flake8-print
+    "TID", # flake8-tidy-imports
+    "PTH", # flake8-use-pathlib
+    "TRY", # tryceratops
+    "PYI", # flake8-pyi
+    "ANN", # flake8-annotations
+    "ARG", # flake8-unused-arguments
+    "ASYNC", # flake8-async
+    "SLF", # flake8-self
+    "RET", # flake8-return
+    "FURB", # refurb
+    "G", # flake8-logging-format
+    "LOG", # flake8-logging
+    "N", # pep8-naming
+    "ERA", # eradicate
+    "TC", # flake8-type-checking
+    "TD", # flake8-todos
+    "unnecessary-paren-on-raise-exception", # flake8-raise/RSE102
+    "SLOT", # flake8-slots
+    "blanket-type-ignore", # pygrep-hooks/PGH003
+    "blanket-noqa", # pygrep-hooks/PGH004
+    "implicit-namespace-package", # flake8-no-pep420/INP001
+]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+lines-after-imports = 2
+combine-as-imports = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ty.environment]
+python-version = "3.14"
+
+[tool.ty.terminal]
+error-on-warning = true
