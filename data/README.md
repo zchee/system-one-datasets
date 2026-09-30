@@ -2,7 +2,7 @@
 pretty_name: System One Datasets
 license: other
 license_name: mixed-upstream-licenses
-license_link: manifest.yaml
+license_link: https://huggingface.co/datasets/zchee/system-one-datasets/blob/main/manifest.yaml
 language:
 - en
 task_categories:

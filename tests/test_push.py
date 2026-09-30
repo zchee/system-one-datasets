@@ -160,6 +160,8 @@ def test_card_frontmatter_declares_every_config() -> None:
     _, front, body = card.split("---\n", 2)
     meta = yaml.safe_load(front)
     assert meta["license"] == "other"
+    # The Hub validates license_link as an https URL and rejects a relative path.
+    assert meta["license_link"] == "https://huggingface.co/datasets/zchee/system-one-datasets/blob/main/manifest.yaml"
     assert meta["size_categories"] == ["1K<n<10K"]
     assert meta["configs"] == [
         {

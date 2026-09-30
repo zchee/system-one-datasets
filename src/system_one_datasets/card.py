@@ -6,6 +6,8 @@ import yaml
 
 
 HF_REPO_ID = "zchee/system-one-datasets"
+# The Hub rejects a relative license_link; it must be an https URL, so point at the manifest on the Hub itself.
+LICENSE_LINK = f"https://huggingface.co/datasets/{HF_REPO_ID}/blob/main/manifest.yaml"
 DESCRIPTION = "Typed-decision datasets for System One models, normalized to the /v1/systemone wire format"
 TAGS: tuple[str, ...] = ("system-one", "typed-decisions", "calibration", "noul", "choice", "score")
 
@@ -51,7 +53,7 @@ def frontmatter(configs: Sequence[Mapping[str, object]]) -> str:
         "pretty_name": "System One Datasets",
         "license": "other",
         "license_name": "mixed-upstream-licenses",
-        "license_link": "manifest.yaml",
+        "license_link": LICENSE_LINK,
         "language": ["en"],
         "task_categories": ["text-classification"],
         "tags": list(TAGS),
