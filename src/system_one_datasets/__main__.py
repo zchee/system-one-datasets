@@ -12,9 +12,9 @@ from system_one_datasets import decisions
 from system_one_datasets.build import JEV_BENCH_REVISION, build
 from system_one_datasets.card import HF_REPO_ID
 from system_one_datasets.client import SystemOneClient
-from system_one_datasets.data import PHASE1_CONFIGS, load_jev_bench
 from system_one_datasets.push import push
 from system_one_datasets.report import render_report
+from system_one_datasets.rows import load_records
 from system_one_datasets.runner import run
 from system_one_datasets.validate import (
     LIVE_SAMPLE_ROWS,
@@ -51,15 +51,22 @@ BACKENDS: dict[str, Backend] = {
 
 
 def _run_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="python -m system_one_datasets", description="Run jev-bench on a backend.")
+    parser = argparse.ArgumentParser(
+        prog="python -m system_one_datasets", description="Run the built datasets on a backend."
+    )
     parser.add_argument("--backend", choices=sorted(BACKENDS), required=True)
     parser.add_argument("--base-url", help="override the backend's default base URL")
     parser.add_argument("--model", help="override the backend's default model")
     parser.add_argument(
+        "--data",
+        type=Path,
+        default=Path("data"),
+        help="dataset root built by `build` (default: data/); rows are read from <suite>/<config>/<split>.jsonl",
+    )
+    parser.add_argument(
         "--config",
         action="append",
-        choices=PHASE1_CONFIGS,
-        help="jev-bench config; repeatable (default: all phase-1 configs)",
+        help="config name under --data; repeatable (default: every config that has the split)",
     )
     parser.add_argument("--split", default="test")
     parser.add_argument("--limit", type=int, help="first N rows per config")
@@ -175,6 +182,21 @@ def _cmd_validate(argv: Sequence[str]) -> int:
     return 1 if failed else 0
 
 
+def _split_files(data: Path, split: str, configs: Sequence[str] | None) -> list[Path]:
+    """Row files ``<suite>/<config>/<split>.jsonl`` under ``data``, in a stable order.
+
+    Args:
+        data: Dataset root written by ``build``.
+        split: Split name.
+        configs: Config names to keep, or ``None`` for every config that has the split.
+
+    Returns:
+        Matching file paths sorted by suite then config.
+    """
+    wanted = set(configs) if configs else None
+    return sorted(path for path in data.glob(f"*/*/{split}.jsonl") if wanted is None or path.parent.name in wanted)
+
+
 def _cmd_run(argv: Sequence[str]) -> int:
     args = _run_parser().parse_args(argv)
     backend = BACKENDS[args.backend]
@@ -184,11 +206,11 @@ def _cmd_run(argv: Sequence[str]) -> int:
         if not api_key:
             logger.error("backend %s needs the %s environment variable", args.backend, backend.api_key_env)
             return 2
-    records = [
-        record
-        for config in args.config or PHASE1_CONFIGS
-        for record in load_jev_bench(config, split=args.split, limit=args.limit)
-    ]
+    files = _split_files(args.data, args.split, args.config)
+    if not files:
+        logger.error("no %s split found under %s for configs %s", args.split, args.data, args.config or "(all)")
+        return 2
+    records = [record for path in files for record in load_records(path)[: args.limit]]
     with SystemOneClient(
         args.base_url or backend.base_url, args.model or backend.model, api_key=api_key, timeout=args.timeout
     ) as client:
