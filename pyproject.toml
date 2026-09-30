@@ -5,13 +5,22 @@ build-backend = "hatchling.build"
 [project]
 name = "system-one-datasets"
 version = "0.1.0"
-description = "Add your description here"
+description = "Typed-decision datasets for System One models, normalized to the /v1/systemone wire format"
 readme = "README.md"
 authors = [
     { name = "Koichi Shiraishi", email = "zchee.io@gmail.com" },
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "datasets>=5.0.1",
+    "httpx>=0.28.1",
+    "huggingface-hub>=1.33.0",
+    "orjson>=3.12.0",
+    "polars>=1.44.2",
+    "pyarrow>=25.0.1",
+    "pyyaml>=6.0.3",
+    "tqdm>=4.70.1",
+]
 
 [dependency-groups]
 dev = [
