@@ -1,0 +1,356 @@
+name: system-one-datasets
+description: Typed-decision datasets for System One models, normalized to the /v1/systemone wire format
+format: JSON Lines, one row per line, at <suite>/<config>/<split>.jsonl. state, question, and soft_label are JSON-encoded
+  strings (soft_label is the text 'null' when absent); every other field is a plain JSON value.
+row_fields:
+- id
+- suite
+- config
+- kind
+- state
+- question
+- options
+- label
+- soft_label
+- source
+- source_revision
+- upstream
+- license
+wire_request: '{''state'': json.loads(row[''state'']), ''model'': <model>, ''questions'': {<any id>: json.loads(row[''question''])}}'
+rebuild: uv run python -m system_one_datasets build --out data/
+validate: uv run python -m system_one_datasets validate data/
+configs:
+- config: civil_comments
+  suite: moderation
+  kinds:
+  - noul
+  description: Is this online comment toxic? Soft label = share of annotators who said yes.
+  splits:
+    test:
+      file: moderation/civil_comments/test.jsonl
+      rows: 2000
+      rows_with_soft_label: 2000
+      sha256: ad73dc3e56fce9cfb7311268230e2935e355eb9d9f44f32acdb0b7e7bfb8ea6a
+    validation:
+      file: moderation/civil_comments/validation.jsonl
+      rows: 500
+      rows_with_soft_label: 500
+      sha256: 51663b5d1ad61149562bb50ad1f55714216fa7937ebda8e1a7a7503badea73ba
+  source:
+    hf_id: Praveenrajus/jev-bench
+    hf_config: civil_comments
+    revision: 18f88da81c28c2bec55edc31f63f2afdfba109ea
+  upstream:
+    hf_id: google/civil_comments
+    hf_config: default
+  license: cc0-1.0
+  license_as_stated_by_source: cc0-1.0
+  soft_labels: true
+  transformations:
+  - state and question are JSON text in the source and here; they are decoded and re-encoded compactly (orjson,
+    key order preserved), so the decoded values are identical to the source's and can be sent to POST /v1/systemone
+    as-is.
+  - 'options: choice = criteria keys in order; score = level indices ''0''..''K-1''; noul = [''0'', ''1''].'
+  - 'soft_label normalized to {option: probability}: noul scalar P(yes) p -> {''0'': 1 - p, ''1'': p}; score array
+    -> keyed by level index; choice object -> every option, absent options 0.0. Stored as JSON text; the text ''null''
+    when the source has none.'
+  - id and label copied from the source; rows kept in source order; no rows added, dropped, or rewritten.
+  - upstream = the original dataset jev-bench built this config from (hf_id in jev-bench's manifest.json); license
+    = that dataset's license as jev-bench states it, without the parenthetical note.
+  - 'jev-bench build note: Natural class balance (~8% toxic); test cap raised to 2000 so positives are not too thin.
+    train/validation are drawn from the 97k-row HF validation split (the 1.8M-row train split is not needed).'
+- config: measuring_hate_speech
+  suite: moderation
+  kinds:
+  - score
+  description: Does the comment contain hate speech? Three levels with annotator distributions as soft labels.
+  splits:
+    test:
+      file: moderation/measuring_hate_speech/test.jsonl
+      rows: 1000
+      rows_with_soft_label: 1000
+      sha256: 7bee80733dcec403f18fa21839b385ecdd4a4ca51498c9a7149b4ff6abd6d345
+    validation:
+      file: moderation/measuring_hate_speech/validation.jsonl
+      rows: 500
+      rows_with_soft_label: 500
+      sha256: 21d04576fe51df0a4d326b47f66b50599d30a22a8791cd3e8b1f49a2bf1e15a7
+  source:
+    hf_id: Praveenrajus/jev-bench
+    hf_config: measuring_hate_speech
+    revision: 18f88da81c28c2bec55edc31f63f2afdfba109ea
+  upstream:
+    hf_id: ucberkeley-dlab/measuring-hate-speech
+    hf_config: default
+  license: cc-by-4.0
+  license_as_stated_by_source: cc-by-4.0
+  soft_labels: true
+  transformations:
+  - state and question are JSON text in the source and here; they are decoded and re-encoded compactly (orjson,
+    key order preserved), so the decoded values are identical to the source's and can be sent to POST /v1/systemone
+    as-is.
+  - 'options: choice = criteria keys in order; score = level indices ''0''..''K-1''; noul = [''0'', ''1''].'
+  - 'soft_label normalized to {option: probability}: noul scalar P(yes) p -> {''0'': 1 - p, ''1'': p}; score array
+    -> keyed by level index; choice object -> every option, absent options 0.0. Stored as JSON text; the text ''null''
+    when the source has none.'
+  - id and label copied from the source; rows kept in source order; no rows added, dropped, or rewritten.
+  - upstream = the original dataset jev-bench built this config from (hf_id in jev-bench's manifest.json); license
+    = that dataset's license as jev-bench states it, without the parenthetical note.
+  - 'jev-bench build note: Aggregated from annotator-level rows; soft_label = annotator vote shares over the 3 levels.'
+- config: go_emotions
+  suite: moderation
+  kinds:
+  - choice
+  description: Which emotion does a Reddit comment primarily express (27 emotions + neutral)? soft_label = rater
+    vote shares.
+  splits:
+    test:
+      file: moderation/go_emotions/test.jsonl
+      rows: 1000
+      rows_with_soft_label: 1000
+      sha256: dfff5f21824fe2ef96b9a51db1d2635977ea9275638175001f2afcbf9b1abe58
+    validation:
+      file: moderation/go_emotions/validation.jsonl
+      rows: 500
+      rows_with_soft_label: 500
+      sha256: 82a47b4d1401d181bc043736a6f043e79c611c3dc26d9a3929d53f3e69436620
+  source:
+    hf_id: Praveenrajus/jev-bench
+    hf_config: go_emotions
+    revision: 18f88da81c28c2bec55edc31f63f2afdfba109ea
+  upstream:
+    hf_id: google-research-datasets/go_emotions
+    hf_config: raw
+  license: apache-2.0
+  license_as_stated_by_source: apache-2.0
+  soft_labels: true
+  transformations:
+  - state and question are JSON text in the source and here; they are decoded and re-encoded compactly (orjson,
+    key order preserved), so the decoded values are identical to the source's and can be sent to POST /v1/systemone
+    as-is.
+  - 'options: choice = criteria keys in order; score = level indices ''0''..''K-1''; noul = [''0'', ''1''].'
+  - 'soft_label normalized to {option: probability}: noul scalar P(yes) p -> {''0'': 1 - p, ''1'': p}; score array
+    -> keyed by level index; choice object -> every option, absent options 0.0. Stored as JSON text; the text ''null''
+    when the source has none.'
+  - id and label copied from the source; rows kept in source order; no rows added, dropped, or rewritten.
+  - upstream = the original dataset jev-bench built this config from (hf_id in jev-bench's manifest.json); license
+    = that dataset's license as jev-bench states it, without the parenthetical note.
+  - 'jev-bench build note: v0.1.1: rebuilt from the raw config with rater vote shares as soft labels (v0.1 used
+    the single-label ''simplified'' subset).'
+- config: helpsteer2_helpfulness
+  suite: quality
+  kinds:
+  - score
+  description: Rate how helpful an assistant response is to the user's prompt (HelpSteer2 helpfulness, 0–4).
+  splits:
+    test:
+      file: quality/helpsteer2_helpfulness/test.jsonl
+      rows: 1000
+      rows_with_soft_label: 0
+      sha256: 015fd63ff51182475b3224d49bd79aee5fa195684faa16bdab1cfe8dc2096dd7
+    validation:
+      file: quality/helpsteer2_helpfulness/validation.jsonl
+      rows: 500
+      rows_with_soft_label: 0
+      sha256: b43d36c617b0d93e95014b6b132b6cb9a6a8bb149daed6ec21e01c226dd96ae8
+  source:
+    hf_id: Praveenrajus/jev-bench
+    hf_config: helpsteer2_helpfulness
+    revision: 18f88da81c28c2bec55edc31f63f2afdfba109ea
+  upstream:
+    hf_id: nvidia/HelpSteer2
+    hf_config: null
+  license: cc-by-4.0
+  license_as_stated_by_source: cc-by-4.0
+  soft_labels: false
+  transformations:
+  - state and question are JSON text in the source and here; they are decoded and re-encoded compactly (orjson,
+    key order preserved), so the decoded values are identical to the source's and can be sent to POST /v1/systemone
+    as-is.
+  - 'options: choice = criteria keys in order; score = level indices ''0''..''K-1''; noul = [''0'', ''1''].'
+  - 'soft_label normalized to {option: probability}: noul scalar P(yes) p -> {''0'': 1 - p, ''1'': p}; score array
+    -> keyed by level index; choice object -> every option, absent options 0.0. Stored as JSON text; the text ''null''
+    when the source has none.'
+  - id and label copied from the source; rows kept in source order; no rows added, dropped, or rewritten.
+  - upstream = the original dataset jev-bench built this config from (hf_id in jev-bench's manifest.json); license
+    = that dataset's license as jev-bench states it, without the parenthetical note.
+- config: stsb
+  suite: quality
+  kinds:
+  - score
+  description: Rate how similar in meaning two sentences are on the 0–5 STS scale.
+  splits:
+    test:
+      file: quality/stsb/test.jsonl
+      rows: 1000
+      rows_with_soft_label: 0
+      sha256: 5318b1f0f82f0ddd79a7911edc76201c313308181954ca957d7032bd60995365
+    validation:
+      file: quality/stsb/validation.jsonl
+      rows: 500
+      rows_with_soft_label: 0
+      sha256: bb5eadd23567f143a516caf6ccdcbfd67415d69867b81f82d553d814cee8e0ae
+  source:
+    hf_id: Praveenrajus/jev-bench
+    hf_config: stsb
+    revision: 18f88da81c28c2bec55edc31f63f2afdfba109ea
+  upstream:
+    hf_id: sentence-transformers/stsb
+    hf_config: default
+  license: cc-by-sa-4.0
+  license_as_stated_by_source: cc-by-sa-4.0 (STS Benchmark)
+  soft_labels: false
+  transformations:
+  - state and question are JSON text in the source and here; they are decoded and re-encoded compactly (orjson,
+    key order preserved), so the decoded values are identical to the source's and can be sent to POST /v1/systemone
+    as-is.
+  - 'options: choice = criteria keys in order; score = level indices ''0''..''K-1''; noul = [''0'', ''1''].'
+  - 'soft_label normalized to {option: probability}: noul scalar P(yes) p -> {''0'': 1 - p, ''1'': p}; score array
+    -> keyed by level index; choice object -> every option, absent options 0.0. Stored as JSON text; the text ''null''
+    when the source has none.'
+  - id and label copied from the source; rows kept in source order; no rows added, dropped, or rewritten.
+  - upstream = the original dataset jev-bench built this config from (hf_id in jev-bench's manifest.json); license
+    = that dataset's license as jev-bench states it, without the parenthetical note.
+- config: jev_decisions_v1
+  suite: agent_action
+  kinds:
+  - choice
+  description: 'Next-action selection for tool-using agents: given the visible agent state, which of the available
+    tools/actions should be called next?'
+  splits:
+    test:
+      file: agent_action/jev_decisions_v1/test.jsonl
+      rows: 1000
+      rows_with_soft_label: 0
+      sha256: b8e6fab878da5aceef0dd00a5cbd91a202552fdb934881471cc4c371e24374b9
+  source:
+    hf_id: samatv256/jev-decisions-v1
+    hf_config: default
+    hf_split: test
+    file: data/test/test-00000-of-00001.parquet
+    revision: c12aadf1f01c72616bfab0b02480e21806397669
+  upstream:
+  - hf_id: nvidia/Nemotron-SFT-Agentic-v2
+  - hf_id: nvidia/Nemotron-RL-Agentic-Conversational-Tool-Use-Pivot-v1
+  - hf_id: nvidia/Nemotron-RL-Agentic-Function-Calling-Pivot-v1
+  - hf_id: nvidia/Open-SWE-Traces
+  license: per row
+  licenses:
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - MIT
+  - cc-by-4.0
+  license_rule: Rows whose upstream is nvidia/Open-SWE-Traces carry the SPDX id of the source repository (provenance.source_metadata_json.repo_license)
+    in license; an Open-SWE-Traces row without a usable SPDX id would keep cc-by-4.0 and is counted in selection.license_fallbacks.
+    Rows from the Nemotron datasets carry no repository license and are cc-by-4.0. Every row is also subject to
+    the CC BY 4.0 attribution terms of jev-decisions-v1 and its NVIDIA upstream datasets.
+  license_as_stated_by_source: cc-by-4.0 (dataset card). All four NVIDIA upstream cards list CC BY 4.0; some also
+    list Apache-2.0/MIT (and BSD for Open-SWE-Traces). Open-SWE-Traces records carry a per-repository SPDX license
+    (provenance.source_metadata_json.repo_license). See the source's SOURCE_LICENSES.md before redistribution.
+  soft_labels: false
+  transformations:
+  - 'Source: the test partition only (data/test/test-00000-of-00001.parquet, one shard), read in Arrow batches from
+    the Hugging Face cache.'
+  - 'Eligibility: training.choice_eligible is true; 2..255 candidates; ordered_targets empty; candidate names non-empty
+    and unique; target.candidate_id matches exactly one candidate whose name equals target.action_name.'
+  - 'Token cap: rows whose state+question exceed ~32000 tokens (serialized JSON chars / 3, the validator''s warning
+    threshold) are excluded before sampling; no row is truncated.'
+  - 'question.type = ''choice''; question.instructions = the fixed Choice question the publisher uses in its general-clean-50k
+    config: ''Given the current state and available options,\nwhich option should be selected?''. The record carries
+    no per-row question text; the user''s task stays in state.user_goal.'
+  - 'question.criteria = {candidate.name: candidate.description, or null when empty}, in source candidate order.
+    Parameter schemas, candidate metadata, and target arguments are not included.'
+  - label = target.action_name (the matched candidate's name); options = criteria keys in order; soft_label = null.
+  - 'state = {system, user_goal, environment, history}: system and user_goal copied as strings (omitted when null/empty;
+    kept even when they repeat a history turn); environment = decoded state.environment_json (omitted when null/empty);
+    history = [{role, content}] with content = decoded payload_json. Serialized JSON that does not parse is kept
+    as the raw string (count below).'
+  - upstream = the record's source field (the NVIDIA dataset it was derived from); license = see license_rule.
+  - id = 'jev_decisions_v1/test/<source id>'. Labels, provenance, and training fields are never copied into state.
+  - 'Sampling: candidate-count buckets 2, 3-4, 5-8, 9-16, 17+; the 1,000 rows are split across buckets in proportion
+    to rows available after the token cap (largest-remainder method); within a bucket, rows with the smallest sha256(''20260930:<source
+    id>'') are taken. Selection is independent of source row order. Rows are written by bucket, then by that key.'
+  selection:
+    seed: 20260930
+    size: 1000
+    source_rows: 354635
+    excluded:
+      candidate_count_outside_2_255: 8515
+      not_choice_eligible: 174934
+      over_token_limit: 70137
+    buckets:
+    - bucket: '2'
+      eligible: 5903
+      within_token_cap: 5853
+      selected: 58
+    - bucket: 3-4
+      eligible: 112955
+      within_token_cap: 43053
+      selected: 426
+    - bucket: 5-8
+      eligible: 13925
+      within_token_cap: 13867
+      selected: 137
+    - bucket: 9-16
+      eligible: 21405
+      within_token_cap: 21335
+      selected: 211
+    - bucket: 17+
+      eligible: 16998
+      within_token_cap: 16941
+      selected: 168
+    by_upstream:
+    - hf_id: nvidia/Nemotron-RL-Agentic-Conversational-Tool-Use-Pivot-v1
+      eligible: 1972
+      within_token_cap: 1972
+      selected: 17
+    - hf_id: nvidia/Nemotron-RL-Agentic-Function-Calling-Pivot-v1
+      eligible: 108
+      within_token_cap: 108
+      selected: 1
+    - hf_id: nvidia/Nemotron-SFT-Agentic-v2
+      eligible: 68297
+      within_token_cap: 68009
+      selected: 668
+    - hf_id: nvidia/Open-SWE-Traces
+      eligible: 100809
+      within_token_cap: 30960
+      selected: 314
+    by_license:
+    - license: cc-by-4.0
+      selected: 686
+    - license: MIT
+      selected: 183
+    - license: Apache-2.0
+      selected: 100
+    - license: BSD-3-Clause
+      selected: 25
+    - license: BSD-2-Clause
+      selected: 6
+    by_upstream_and_license:
+    - hf_id: nvidia/Nemotron-RL-Agentic-Conversational-Tool-Use-Pivot-v1
+      license: cc-by-4.0
+      selected: 17
+    - hf_id: nvidia/Nemotron-RL-Agentic-Function-Calling-Pivot-v1
+      license: cc-by-4.0
+      selected: 1
+    - hf_id: nvidia/Nemotron-SFT-Agentic-v2
+      license: cc-by-4.0
+      selected: 668
+    - hf_id: nvidia/Open-SWE-Traces
+      license: Apache-2.0
+      selected: 100
+    - hf_id: nvidia/Open-SWE-Traces
+      license: BSD-2-Clause
+      selected: 6
+    - hf_id: nvidia/Open-SWE-Traces
+      license: BSD-3-Clause
+      selected: 25
+    - hf_id: nvidia/Open-SWE-Traces
+      license: MIT
+      selected: 183
+    license_fallbacks: 0
+    selected_trajectories: 945
+    max_rows_per_trajectory: 4
+    json_decode_fallbacks: 0

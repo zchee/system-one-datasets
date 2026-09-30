@@ -224,3 +224,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local benchmark run outputs
+results/
+
+# Built dataset rows: regenerate with `build` or fetch from the Hugging Face Hub
+data/**/*.jsonl
